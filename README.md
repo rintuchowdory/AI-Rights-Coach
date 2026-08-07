@@ -54,10 +54,22 @@ docker compose up --build
 
 ## Roadmap
 
-- **Milestone 1** — Monorepo scaffold, README, CI, Docker Compose *(this commit)*
-- **Milestone 2** — Expo app shell + FastAPI backend + Postgres, wired together
+- **Milestone 1** — Monorepo scaffold, README, CI, Docker Compose ✅
+- **Milestone 2** — Expo app shell + FastAPI backend + Postgres, wired together *(this commit)*
 - **Milestone 3** — Authentication, OCR pipeline, AI document explanation, case management
 - **Milestone 4** — Notifications, calendar, reply generator, translation, beta release
+
+## API (Milestone 2)
+
+- `GET /health` — service liveness check
+- `POST /users`, `GET /users` — create/list users (no auth yet — Milestone 3)
+- `POST /cases`, `GET /cases`, `GET /cases/{id}` — create/list/read cases
+- `GET /cases/{id}/documents` — documents attached to a case
+- `GET /documents/{id}` — document detail (upload + OCR land in Milestone 3)
+
+The mobile app's home screen calls `GET /health` on load to confirm it can
+reach the backend — set `EXPO_PUBLIC_API_URL` in `apps/mobile/.env` (see
+`.env.example`) to point it at your backend.
 
 ## License
 
