@@ -28,6 +28,26 @@ AI-Rights-Coach/
 └── README.md
 ```
 
+## Deploying the backend (Render)
+
+`render.yaml` at the repo root is a Render Blueprint that provisions both the
+Postgres database and the FastAPI backend together.
+
+**One-time setup:**
+1. Render Dashboard → **New → Blueprint** → connect `rintuchowdory/AI-Rights-Coach`.
+2. Render reads `render.yaml` and provisions `ai-rights-coach-db` (Postgres,
+   Frankfurt, free plan) and `ai-rights-coach-backend` (Docker web service,
+   Frankfurt, free plan) automatically, wiring `DATABASE_URL` between them.
+3. It'll come up at `https://ai-rights-coach-backend.onrender.com` — that URL
+   is already baked into the GitHub Pages build (see below), so once this is
+   live, the deployed demo's health dot should turn green.
+
+**Known free-tier quirks:**
+- The web service spins down after ~15 min of inactivity — the first request
+  after idle can take 30–60s while it wakes up.
+- Render's free Postgres databases expire after 90 days unless upgraded to a
+  paid plan. Fine for now, but don't forget it exists.
+
 ## Live web demo (GitHub Pages)
 
 Every push to `main` that touches `apps/mobile/` builds the Expo app for web

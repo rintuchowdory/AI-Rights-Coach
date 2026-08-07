@@ -1,0 +1,32 @@
+# Render Blueprint — deploys the backend + Postgres together.
+# One-time setup: Render Dashboard → New → Blueprint → connect this repo.
+# Render reads this file automatically and provisions everything below.
+# https://render.com/docs/blueprint-spec
+
+databases:
+  - name: ai-rights-coach-db
+    databaseName: rights_coach
+    user: rights_coach
+    plan: free
+    region: frankfurt
+
+services:
+  - type: web
+    name: ai-rights-coach-backend
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    plan: free
+    region: frankfurt
+    healthCheckPath: /health
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: ai-rights-coach-db
+          property: connectionString
+      - key: SECRET_KEY
+        generateValue: true
+      - key: AI_PROVIDER_API_KEY
+        sync: false
+      - key: OCR_PROVIDER_API_KEY
+        sync: false
