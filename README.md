@@ -28,6 +28,20 @@ AI-Rights-Coach/
 └── README.md
 ```
 
+## Live web demo (GitHub Pages)
+
+Every push to `main` that touches `apps/mobile/` builds the Expo app for web
+(`npx expo export -p web`) and deploys it to GitHub Pages via
+`.github/workflows/deploy-pages.yml`.
+
+**One-time setup** (repo owner only): go to the repo's **Settings → Pages**
+and set **Source** to **GitHub Actions**. After that, every push publishes to
+`https://rintuchowdory.github.io/AI-Rights-Coach/`.
+
+Note: the deployed demo has no backend to talk to (it's static hosting), so
+the health-check dot on the home screen will show **offline** there — that's
+expected until the FastAPI backend is deployed somewhere public too.
+
 ## Getting started (backend)
 
 ```bash
