@@ -1,0 +1,20 @@
+{
+  "expo": {
+    "name": "AI Rights Coach",
+    "slug": "ai-rights-coach",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.rintuchowdory.airightscoach"
+    },
+    "android": {
+      "package": "com.rintuchowdory.airightscoach"
+    },
+    "web": {
+      "bundler": "metro"
+    }
+  }
+}
