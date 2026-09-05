@@ -38,6 +38,9 @@ jobs:
         env:
           EXPO_PUBLIC_API_URL: https://ai-rights-coach-backend.onrender.com
 
+      - name: Inject white-screen diagnostics guard
+        run: node inject-diagnostics.js
+
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
