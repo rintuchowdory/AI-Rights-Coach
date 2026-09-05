@@ -1,8 +1,8 @@
 import { Component, ErrorInfo, ReactNode } from "react";
+import { Platform, Text, View } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
-import { Text, View } from "react-native";
 import HomeScreen from "./src/screens/HomeScreen";
 
 export type RootStackParamList = {
@@ -43,7 +43,19 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | 
   }
 }
 
-export default function App() {
+function WebApp() {
+  // The app has a single screen — render it directly on web. The native
+  // stack navigator (react-native-screens) is not reliably supported on
+  // web and caused a blank page in the static Expo export.
+  return (
+    <ErrorBoundary>
+      <HomeScreen />
+      <StatusBar style="auto" />
+    </ErrorBoundary>
+  );
+}
+
+function NativeApp() {
   return (
     <ErrorBoundary>
       <NavigationContainer>
@@ -58,4 +70,8 @@ export default function App() {
       </NavigationContainer>
     </ErrorBoundary>
   );
+}
+
+export default function App() {
+  return Platform.OS === "web" ? <WebApp /> : <NativeApp />;
 }

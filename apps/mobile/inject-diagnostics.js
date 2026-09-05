@@ -32,7 +32,7 @@ const guard = `
         });
         setTimeout(function () {
           var root = document.getElementById("root");
-          if (root && root.children.length === 0) {
+          if (root && root.textContent.trim().length === 0) {
             show("App did not render within 8s (root stayed empty). No JS error was caught, so check network requests / bundle path.");
           }
         }, 8000);
@@ -46,7 +46,7 @@ html = html.replace("</head>", guard + "  </head>");
 // timeout check above doesn't false-positive after a slow-but-successful mount.
 html = html.replace(
   '<div id="root"></div>',
-  '<div id="root"></div>\n    <script>new MutationObserver(function(muts){var root=document.getElementById("root");if(root&&root.children.length>0){root.dataset.mounted="1";}}).observe(document.getElementById("root")||document.body,{childList:true,subtree:true});</script>'
+  '<div id="root"></div>\n    <script>new MutationObserver(function(muts){var root=document.getElementById("root");if(root&&root.textContent.trim().length>0){root.dataset.mounted="1";}}).observe(document.getElementById("root")||document.body,{childList:true,subtree:true});</script>'
 );
 
 fs.writeFileSync(indexPath, html);
