@@ -4,6 +4,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
     database_url: str = "postgresql+asyncpg://rights_coach:rights_coach@localhost:5432/rights_coach"
+    database_schema: str = ""  # optional: isolate tables in a dedicated Postgres schema
     secret_key: str = "change-me"
     access_token_expire_minutes: int = 60
     ai_provider_api_key: str = ""
