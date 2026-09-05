@@ -19,7 +19,7 @@
       "bundler": "metro"
     },
     "experiments": {
-      "baseUrl": "/AI-Rights-Coach"
+      "baseUrl": "./"
     }
   }
 }
