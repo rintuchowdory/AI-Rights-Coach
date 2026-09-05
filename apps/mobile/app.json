@@ -5,7 +5,9 @@
     "version": "0.1.0",
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.rintuchowdory.airightscoach"
@@ -15,6 +17,9 @@
     },
     "web": {
       "bundler": "metro"
+    },
+    "experiments": {
+      "baseUrl": "/AI-Rights-Coach"
     }
   }
 }
