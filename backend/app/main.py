@@ -26,7 +26,15 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # tighten before production
+    allow_origins=[
+        "https://ai-rights-coach.pages.dev",
+        "https://rintuchowdory.github.io",
+        # local development
+        "http://localhost:8081",
+        "http://localhost:19006",
+    ],
+    # Cloudflare Pages preview deployments (https://<hash>.ai-rights-coach.pages.dev)
+    allow_origin_regex=r"https://[a-z0-9]+\.ai-rights-coach\.pages\.dev",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
