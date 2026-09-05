@@ -1,15 +1,11 @@
-import { Component, ErrorInfo, ReactNode } from "react";
-import { Platform, Text, View } from "react-native";
+import { Component, ErrorInfo, ReactNode, useState } from "react";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import { StatusBar } from "expo-status-bar";
-import { NavigationContainer } from "@react-navigation/native";
-import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import HomeScreen from "./src/screens/HomeScreen";
+import DocumentReviewScreen from "./src/screens/DocumentReviewScreen";
+import DraftResponseScreen from "./src/screens/DraftResponseScreen";
 
-export type RootStackParamList = {
-  Home: undefined;
-};
-
-const Stack = createNativeStackNavigator<RootStackParamList>();
+type Screen = "Home" | "Review" | "Draft";
 
 class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
   state: { error: Error | null } = { error: null };
@@ -43,35 +39,44 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | 
   }
 }
 
-function WebApp() {
-  // The app has a single screen — render it directly on web. The native
-  // stack navigator (react-native-screens) is not reliably supported on
-  // web and caused a blank page in the static Expo export.
+export default function App() {
+  const [screen, setScreen] = useState<Screen>("Home");
+
   return (
     <ErrorBoundary>
-      <HomeScreen />
+      <View style={styles.root}>
+        {screen !== "Home" && (
+          <Pressable style={styles.backBtn} onPress={() => setScreen("Home")}>
+            <Text style={styles.backText}>← Back</Text>
+          </Pressable>
+        )}
+        {screen === "Home" && (
+          <HomeScreen
+            onOpenReview={() => setScreen("Review")}
+            onOpenDraft={() => setScreen("Draft")}
+          />
+        )}
+        {screen === "Review" && <DocumentReviewScreen />}
+        {screen === "Draft" && <DraftResponseScreen />}
+      </View>
       <StatusBar style="auto" />
     </ErrorBoundary>
   );
 }
 
-function NativeApp() {
-  return (
-    <ErrorBoundary>
-      <NavigationContainer>
-        <Stack.Navigator initialRouteName="Home">
-          <Stack.Screen
-            name="Home"
-            component={HomeScreen}
-            options={{ title: "AI Rights Coach" }}
-          />
-        </Stack.Navigator>
-        <StatusBar style="auto" />
-      </NavigationContainer>
-    </ErrorBoundary>
-  );
-}
-
-export default function App() {
-  return Platform.OS === "web" ? <WebApp /> : <NativeApp />;
-}
+const styles = StyleSheet.create({
+  root: {
+    flex: 1,
+  },
+  backBtn: {
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 6,
+    alignSelf: "flex-start",
+  },
+  backText: {
+    fontSize: 15,
+    color: "#2563eb",
+    fontWeight: "600",
+  },
+});

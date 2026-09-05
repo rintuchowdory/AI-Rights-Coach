@@ -1,10 +1,16 @@
 import { useCallback, useEffect, useState } from "react";
-import { ActivityIndicator, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
 import { api, ApiError } from "../api/client";
 
 type Status = "checking" | "online" | "offline";
 
-export default function HomeScreen() {
+export default function HomeScreen({
+  onOpenReview,
+  onOpenDraft,
+}: {
+  onOpenReview: () => void;
+  onOpenDraft: () => void;
+}) {
   const [status, setStatus] = useState<Status>("checking");
   const [detail, setDetail] = useState<string>("");
   const [refreshing, setRefreshing] = useState(false);
@@ -51,6 +57,15 @@ export default function HomeScreen() {
         </Text>
       </View>
       {detail ? <Text style={styles.detailText}>{detail}</Text> : null}
+
+      <Pressable style={styles.menuButton} onPress={onOpenReview}>
+        <Text style={styles.menuButtonText}>📄 Review a document</Text>
+        <Text style={styles.menuButtonHint}>Understand a notice or contract</Text>
+      </Pressable>
+      <Pressable style={styles.menuButton} onPress={onOpenDraft}>
+        <Text style={styles.menuButtonText}>✍️ Draft a response</Text>
+        <Text style={styles.menuButtonHint}>Write a calm, factual reply</Text>
+      </Pressable>
     </ScrollView>
   );
 }
@@ -96,6 +111,31 @@ const styles = StyleSheet.create({
   detailText: {
     fontSize: 12,
     opacity: 0.5,
+    marginTop: 4,
+  },
+  menuButton: {
+    width: 280,
+    maxWidth: "100%",
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    backgroundColor: "#ffffff",
+    marginTop: 16,
+    shadowColor: "#000",
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
+  },
+  menuButtonText: {
+    fontSize: 16,
+    fontWeight: "600",
+    textAlign: "center",
+  },
+  menuButtonHint: {
+    fontSize: 12,
+    opacity: 0.6,
+    textAlign: "center",
     marginTop: 4,
   },
 });
