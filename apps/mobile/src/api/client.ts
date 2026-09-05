@@ -3,7 +3,7 @@ import Constants from "expo-constants";
 // Set EXPO_PUBLIC_API_URL in a .env file (see .env.example). Falls back to
 // localhost, which works in the iOS simulator but NOT on a physical device
 // or Android emulator — use your machine's LAN IP there instead.
-const API_URL =
+export const API_URL =
   process.env.EXPO_PUBLIC_API_URL ??
   (Constants.expoConfig?.extra?.apiUrl as string | undefined) ??
   "http://localhost:8000";

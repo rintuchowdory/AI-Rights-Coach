@@ -10,6 +10,7 @@ import {
   TextInput,
   View,
 } from "react-native";
+import { API_URL } from "../api/client";
 import { colors } from "../theme";
 
 type Message = {
@@ -21,10 +22,10 @@ type Message = {
 const WELCOME =
   "Hi, I'm your AI Rights Coach. Tell me what's going on — a notice you received, a dispute with a landlord or employer, or a consumer issue — and I'll help you figure out what to check and how to respond.";
 
-const NOTE =
-  "Note: I'm running on quick guided rules right now, not a full AI model yet — the real AI provider key is still being set up. I can still point you to the right checklist and drafting screen.";
+const OFFLINE_NOTE =
+  "Note: I couldn't reach the AI just now, so this is a quick guided answer. Try again in a moment for a full AI response.";
 
-function guessReply(input: string): string {
+function fallbackReply(input: string): string {
   const text = input.toLowerCase();
   if (/(rent|landlord|eviction|tenant|lease|miete|wohnung|kündigung)/.test(text)) {
     return "This sounds tenancy-related. Check the notice for the sender, the date, and any deadline. Then open Review a document for a structured checklist, or Draft a response if you're ready to reply.";
@@ -41,32 +42,67 @@ function guessReply(input: string): string {
   return "Got it. Could you share a bit more — who sent it, what they're asking for, and by when? In the meantime, Review a document and Draft a response on the Home screen walk you through the key steps.";
 }
 
+async function askAI(
+  history: Message[],
+  message: string
+): Promise<{ reply: string; ai: boolean }> {
+  const res = await fetch(`${API_URL}/chat`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      message,
+      history: history.slice(-10).map((m) => ({
+        role: m.from === "user" ? "user" : "assistant",
+        content: m.text,
+      })),
+    }),
+  });
+  if (!res.ok) throw new Error(`chat ${res.status}`);
+  const data = (await res.json()) as { reply: string };
+  return { reply: data.reply, ai: true };
+}
+
 export default function ChatScreen() {
   const [messages, setMessages] = useState<Message[]>([{ id: "0", from: "bot", text: WELCOME }]);
   const [input, setInput] = useState("");
   const [typing, setTyping] = useState(false);
   const scrollRef = useRef<ScrollView>(null);
-  const shownNote = useRef(false);
+  const historyRef = useRef<Message[]>([]);
 
   const send = () => {
     const trimmed = input.trim();
-    if (!trimmed) return;
+    if (!trimmed || typing) return;
     const userMsg: Message = { id: Date.now().toString(), from: "user", text: trimmed };
+    const history = historyRef.current;
+    historyRef.current = [...history, userMsg];
     setMessages((prev) => [...prev, userMsg]);
     setInput("");
     setTyping(true);
+    requestAnimationFrame(() => scrollRef.current?.scrollToEnd({ animated: true }));
 
-    const delay = 550 + Math.random() * 400;
-    setTimeout(() => {
-      let reply = guessReply(trimmed);
-      if (!shownNote.current) {
-        reply = `${reply}\n\n${NOTE}`;
-        shownNote.current = true;
-      }
-      setMessages((prev) => [...prev, { id: Date.now().toString() + "b", from: "bot", text: reply }]);
-      setTyping(false);
-      requestAnimationFrame(() => scrollRef.current?.scrollToEnd({ animated: true }));
-    }, delay);
+    askAI(history, trimmed)
+      .then(({ reply }) => {
+        historyRef.current = [
+          ...historyRef.current,
+          { id: Date.now().toString() + "b", from: "bot", text: reply },
+        ];
+        setMessages((cur) => [
+          ...cur,
+          { id: Date.now().toString() + "b", from: "bot", text: reply },
+        ]);
+        setTyping(false);
+      })
+      .catch(() => {
+        setMessages((cur) => [
+          ...cur,
+          {
+            id: Date.now().toString() + "b",
+            from: "bot",
+            text: `${fallbackReply(trimmed)}\n\n${OFFLINE_NOTE}`,
+          },
+        ]);
+        setTyping(false);
+      });
   };
 
   return (
