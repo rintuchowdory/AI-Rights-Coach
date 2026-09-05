@@ -12,7 +12,19 @@ from app.routers import ai, cases, chat, documents, users
 async def lifespan(app: FastAPI):
     # Dev convenience: create tables if they don't exist yet. Once the schema
     # stabilizes, switch to Alembic migrations instead of relying on this.
-    await init_db()
+    # The AI chat/analysis endpoints don't need the DB, so a DB outage must
+    # not take the whole service down — log and keep serving.
+    try:
+        await init_db()
+    except Exception as exc:  # pragma: no cover
+        import logging
+
+        logging.getLogger("uvicorn.error").error(
+            "Database unavailable at startup (%s). "
+            "DB-backed endpoints will fail until DATABASE_URL is fixed. "
+            "AI endpoints keep working.",
+            exc,
+        )
     yield
 
 
