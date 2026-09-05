@@ -7,8 +7,10 @@ class Settings(BaseSettings):
     database_schema: str = ""  # optional: isolate tables in a dedicated Postgres schema
     secret_key: str = "change-me"
     access_token_expire_minutes: int = 60
-    ai_provider_api_key: str = ""
-    ocr_provider_api_key: str = ""
+    ai_provider_api_key: str = ""  # generic fallback slot
+    ocr_provider_api_key: str = ""  # generic fallback slot
+    google_api_key: str = ""  # Google AI Studio key for Gemini (env: GOOGLE_API_KEY)
+    gemini_model: str = "gemini-3.6-flash"
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 

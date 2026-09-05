@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
 from app.db import init_db
-from app.routers import cases, documents, users
+from app.routers import ai, cases, chat, documents, users
 
 
 @asynccontextmanager
@@ -41,6 +41,8 @@ app.add_middleware(
 )
 
 app.include_router(users.router)
+app.include_router(chat.router)
+app.include_router(ai.router)
 app.include_router(cases.router)
 app.include_router(documents.router)
 
