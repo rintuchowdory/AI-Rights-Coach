@@ -1,8 +1,9 @@
 import { StyleSheet, Text, View, Pressable, ScrollView } from "react-native";
+import { colors } from "../theme";
 
 export default function DocumentReviewScreen() {
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <ScrollView style={styles.root} contentContainerStyle={styles.container}>
       <Text style={styles.title}>Review document</Text>
       <Text style={styles.subtitle}>
         Share the notice or contract you need help understanding.
@@ -24,58 +25,61 @@ export default function DocumentReviewScreen() {
         <Text style={styles.cardText}>• Unclear legal authority</Text>
       </View>
 
-      <Pressable style={styles.primaryButton}>
+      <Pressable style={styles.primaryButton} accessibilityRole="button">
         <Text style={styles.primaryButtonText}>Upload document</Text>
       </Pressable>
+      <Text style={styles.hint}>
+        Upload will unlock once the AI/OCR provider key is configured on the backend.
+      </Text>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
+  root: {
+    flex: 1,
+    backgroundColor: colors.bg,
+  },
   container: {
     flexGrow: 1,
-    backgroundColor: "#f8fafc",
     padding: 20,
   },
   title: {
-    color: "#0f172a",
-    fontSize: 28,
+    color: colors.textPrimary,
+    fontSize: 24,
     fontWeight: "800",
     marginBottom: 8,
   },
   subtitle: {
-    color: "#475569",
-    fontSize: 15,
-    lineHeight: 22,
+    color: colors.textSecondary,
+    fontSize: 14,
+    lineHeight: 21,
     marginBottom: 20,
   },
   card: {
-    backgroundColor: "#ffffff",
+    backgroundColor: colors.card,
     borderRadius: 16,
+    borderWidth: 1,
+    borderColor: colors.border,
     padding: 16,
     marginBottom: 16,
-    shadowColor: "#94a3b8",
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 2,
   },
   cardTitle: {
-    color: "#0f172a",
-    fontSize: 16,
+    color: colors.textPrimary,
+    fontSize: 15,
     fontWeight: "700",
     marginBottom: 10,
   },
   cardText: {
-    color: "#334155",
-    fontSize: 14,
-    lineHeight: 22,
+    color: colors.textSecondary,
+    fontSize: 13.5,
+    lineHeight: 21,
     marginBottom: 2,
   },
   primaryButton: {
-    backgroundColor: "#4f46e5",
+    backgroundColor: colors.accent,
     paddingVertical: 14,
-    borderRadius: 12,
+    borderRadius: 14,
     alignItems: "center",
     marginTop: 8,
   },
@@ -83,5 +87,11 @@ const styles = StyleSheet.create({
     color: "#ffffff",
     fontSize: 16,
     fontWeight: "700",
+  },
+  hint: {
+    color: colors.textMuted,
+    fontSize: 11.5,
+    textAlign: "center",
+    marginTop: 10,
   },
 });

@@ -1,11 +1,13 @@
 import { Component, ErrorInfo, ReactNode, useState } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import HomeScreen from "./src/screens/HomeScreen";
 import DocumentReviewScreen from "./src/screens/DocumentReviewScreen";
 import DraftResponseScreen from "./src/screens/DraftResponseScreen";
-
-type Screen = "Home" | "Review" | "Draft";
+import ChatScreen from "./src/screens/ChatScreen";
+import KnowYourRightsScreen from "./src/screens/KnowYourRightsScreen";
+import BottomNav, { TabKey } from "./src/components/BottomNav";
+import { colors } from "./src/theme";
 
 class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
   state: { error: Error | null } = { error: null };
@@ -22,14 +24,14 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | 
   render() {
     if (this.state.error) {
       return (
-        <View style={{ flex: 1, padding: 24, justifyContent: "center" }}>
-          <Text style={{ fontWeight: "700", fontSize: 18, marginBottom: 8 }}>
+        <View style={{ flex: 1, padding: 24, justifyContent: "center", backgroundColor: colors.bg }}>
+          <Text style={{ fontWeight: "700", fontSize: 18, marginBottom: 8, color: colors.textPrimary }}>
             Something crashed while rendering
           </Text>
-          <Text selectable style={{ fontSize: 13, color: "#b91c1c" }}>
+          <Text selectable style={{ fontSize: 13, color: colors.danger }}>
             {this.state.error.name}: {this.state.error.message}
           </Text>
-          <Text selectable style={{ fontSize: 11, color: "#666", marginTop: 12 }}>
+          <Text selectable style={{ fontSize: 11, color: colors.textMuted, marginTop: 12 }}>
             {this.state.error.stack}
           </Text>
         </View>
@@ -40,26 +42,48 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | 
 }
 
 export default function App() {
-  const [screen, setScreen] = useState<Screen>("Home");
+  const [tab, setTab] = useState<TabKey>("Home");
+  const [moreScreen, setMoreScreen] = useState<"menu" | "rights">("menu");
+
+  const goTab = (next: TabKey) => {
+    setMoreScreen("menu");
+    setTab(next);
+  };
 
   return (
     <ErrorBoundary>
       <View style={styles.root}>
-        {screen !== "Home" && (
-          <Pressable style={styles.backBtn} onPress={() => setScreen("Home")}>
-            <Text style={styles.backText}>← Back</Text>
-          </Pressable>
-        )}
-        {screen === "Home" && (
-          <HomeScreen
-            onOpenReview={() => setScreen("Review")}
-            onOpenDraft={() => setScreen("Draft")}
-          />
-        )}
-        {screen === "Review" && <DocumentReviewScreen />}
-        {screen === "Draft" && <DraftResponseScreen />}
+        <View style={styles.content}>
+          {tab === "Home" && (
+            <HomeScreen
+              onOpenReview={() => goTab("Documents")}
+              onOpenDraft={() => goTab("Draft")}
+              onOpenChat={() => goTab("Chat")}
+              onOpenRights={() => {
+                setTab("More");
+                setMoreScreen("rights");
+              }}
+            />
+          )}
+          {tab === "Chat" && <ChatScreen />}
+          {tab === "Documents" && <DocumentReviewScreen />}
+          {tab === "Draft" && <DraftResponseScreen />}
+          {tab === "More" && moreScreen === "rights" && <KnowYourRightsScreen />}
+          {tab === "More" && moreScreen === "menu" && (
+            <View style={styles.morePlaceholder}>
+              <Text style={styles.moreTitle}>More</Text>
+              <Text
+                style={styles.moreLink}
+                onPress={() => setMoreScreen("rights")}
+              >
+                ⚖️  Know your rights
+              </Text>
+            </View>
+          )}
+        </View>
+        <BottomNav active={tab} onChange={goTab} />
       </View>
-      <StatusBar style="auto" />
+      <StatusBar style="light" />
     </ErrorBoundary>
   );
 }
@@ -67,16 +91,29 @@ export default function App() {
 const styles = StyleSheet.create({
   root: {
     flex: 1,
+    backgroundColor: colors.bg,
   },
-  backBtn: {
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 6,
-    alignSelf: "flex-start",
+  content: {
+    flex: 1,
   },
-  backText: {
+  morePlaceholder: {
+    flex: 1,
+    padding: 20,
+  },
+  moreTitle: {
+    color: colors.textPrimary,
+    fontSize: 24,
+    fontWeight: "800",
+    marginBottom: 20,
+  },
+  moreLink: {
+    color: colors.textPrimary,
     fontSize: 15,
-    color: "#2563eb",
     fontWeight: "600",
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 14,
+    padding: 16,
   },
 });

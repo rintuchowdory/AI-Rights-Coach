@@ -1,8 +1,9 @@
 import { StyleSheet, Text, View, Pressable, ScrollView } from "react-native";
+import { colors } from "../theme";
 
 export default function DraftResponseScreen() {
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <ScrollView style={styles.root} contentContainerStyle={styles.container}>
       <Text style={styles.title}>Draft response</Text>
       <Text style={styles.subtitle}>
         Start from a neutral, factual summary before you respond.
@@ -19,86 +20,95 @@ export default function DraftResponseScreen() {
       <View style={styles.previewCard}>
         <Text style={styles.previewLabel}>Sample wording</Text>
         <Text style={styles.previewText}>
-          “Thank you for your message. I have reviewed the document and would appreciate the opportunity to
+          "Thank you for your message. I have reviewed the document and would appreciate the opportunity to
           understand the basis of the claim in more detail. Please share the specific terms, dates, and any
-          supporting documents so I can respond accurately and promptly.”
+          supporting documents so I can respond accurately and promptly."
         </Text>
       </View>
 
-      <Pressable style={styles.primaryButton}>
+      <Pressable style={styles.primaryButton} accessibilityRole="button">
         <Text style={styles.primaryButtonText}>Generate draft</Text>
       </Pressable>
+      <Text style={styles.hint}>
+        Full AI-generated drafts unlock once the AI provider key is configured on the backend.
+      </Text>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
+  root: {
+    flex: 1,
+    backgroundColor: colors.bg,
+  },
   container: {
     flexGrow: 1,
-    backgroundColor: "#f8fafc",
     padding: 20,
   },
   title: {
-    color: "#0f172a",
-    fontSize: 28,
+    color: colors.textPrimary,
+    fontSize: 24,
     fontWeight: "800",
     marginBottom: 8,
   },
   subtitle: {
-    color: "#475569",
-    fontSize: 15,
-    lineHeight: 22,
+    color: colors.textSecondary,
+    fontSize: 14,
+    lineHeight: 21,
     marginBottom: 20,
   },
   card: {
-    backgroundColor: "#ffffff",
+    backgroundColor: colors.card,
     borderRadius: 16,
+    borderWidth: 1,
+    borderColor: colors.border,
     padding: 16,
     marginBottom: 16,
-    shadowColor: "#94a3b8",
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 2,
   },
   cardTitle: {
-    color: "#0f172a",
-    fontSize: 16,
+    color: colors.textPrimary,
+    fontSize: 15,
     fontWeight: "700",
     marginBottom: 10,
   },
   cardText: {
-    color: "#334155",
-    fontSize: 14,
-    lineHeight: 22,
+    color: colors.textSecondary,
+    fontSize: 13.5,
+    lineHeight: 21,
     marginBottom: 2,
   },
   previewCard: {
-    backgroundColor: "#ecfeff",
+    backgroundColor: colors.accentSoft,
     borderRadius: 16,
     padding: 16,
     marginBottom: 16,
   },
   previewLabel: {
-    color: "#0f172a",
+    color: colors.textPrimary,
     fontSize: 14,
     fontWeight: "700",
     marginBottom: 8,
   },
   previewText: {
-    color: "#0f172a",
+    color: colors.textPrimary,
     fontSize: 14,
-    lineHeight: 22,
+    lineHeight: 21,
   },
   primaryButton: {
-    backgroundColor: "#14b8a6",
+    backgroundColor: colors.accent,
     paddingVertical: 14,
-    borderRadius: 12,
+    borderRadius: 14,
     alignItems: "center",
   },
   primaryButtonText: {
     color: "#ffffff",
     fontSize: 16,
     fontWeight: "700",
+  },
+  hint: {
+    color: colors.textMuted,
+    fontSize: 11.5,
+    textAlign: "center",
+    marginTop: 10,
   },
 });
