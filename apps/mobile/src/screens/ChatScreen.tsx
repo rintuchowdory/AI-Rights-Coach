@@ -141,7 +141,11 @@ export default function ChatScreen() {
 
 function Bubble({ message }: { message: Message }) {
   const fade = useRef(new Animated.Value(0)).current;
-  Animated.timing(fade, { toValue: 1, duration: 250, useNativeDriver: true }).start();
+  Animated.timing(fade, {
+    toValue: 1,
+    duration: 250,
+    useNativeDriver: Platform.OS !== "web",
+  }).start();
 
   const isUser = message.from === "user";
   return (

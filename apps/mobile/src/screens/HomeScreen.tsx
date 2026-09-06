@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Animated,
+  Platform,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -52,15 +53,15 @@ export default function HomeScreen({
 
   useEffect(() => {
     checkHealth();
-    Animated.timing(fade, { toValue: 1, duration: 450, useNativeDriver: true }).start();
+    Animated.timing(fade, { toValue: 1, duration: 450, useNativeDriver: Platform.OS !== "web" }).start();
   }, [checkHealth, fade]);
 
   useEffect(() => {
     if (status !== "online") return;
     const loop = Animated.loop(
       Animated.sequence([
-        Animated.timing(pulse, { toValue: 1.35, duration: 900, useNativeDriver: true }),
-        Animated.timing(pulse, { toValue: 1, duration: 900, useNativeDriver: true }),
+        Animated.timing(pulse, { toValue: 1.35, duration: 900, useNativeDriver: Platform.OS !== "web" }),
+        Animated.timing(pulse, { toValue: 1, duration: 900, useNativeDriver: Platform.OS !== "web" }),
       ])
     );
     loop.start();

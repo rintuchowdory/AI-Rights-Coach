@@ -7,6 +7,18 @@ const path = require("path");
 const indexPath = path.join(__dirname, "dist", "index.html");
 let html = fs.readFileSync(indexPath, "utf8");
 
+// Favicon: copy into dist and reference it so browsers stop 404ing on /favicon.ico
+const faviconSrc = path.join(__dirname, "favicon.png");
+if (fs.existsSync(faviconSrc)) {
+  fs.copyFileSync(faviconSrc, path.join(__dirname, "dist", "favicon.png"));
+  if (!html.includes('rel="icon"')) {
+    html = html.replace(
+      "</title>",
+      '</title>\n    <link rel="icon" type="image/png" href="./favicon.png" />'
+    );
+  }
+}
+
 const guard = `
     <script>
       (function () {
