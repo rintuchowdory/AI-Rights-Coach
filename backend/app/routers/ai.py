@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
+from app.config import settings
 from app.services import ai
 
 router = APIRouter(prefix="/ai", tags=["ai"])
@@ -72,3 +73,28 @@ async def draft_reply(payload: DraftRequest):
     except Exception as exc:
         raise HTTPException(status_code=502, detail=f"AI provider error: {exc}")
     return DraftResponse(draft=draft, model="gemini")
+
+
+class GenerateRequest(BaseModel):
+    """Generic prompt-in/JSON-out endpoint used by other client apps."""
+    prompt: str = Field(max_length=30000)
+    response_json_schema: dict | None = None
+    max_tokens: int = Field(default=2048, ge=64, le=4096)
+
+
+@router.post("/generate")
+async def generate(payload: GenerateRequest):
+    """Call Gemini with a prompt and return a parsed JSON object."""
+    try:
+        result = await ai.generate_json(
+            payload.prompt, payload.response_json_schema, payload.max_tokens
+        )
+    except ai.AINotConfiguredError:
+        raise HTTPException(
+            status_code=503,
+            detail="AI provider not configured. Set GOOGLE_API_KEY on the backend.",
+        )
+    except RuntimeError as exc:
+        raise HTTPException(status_code=502, detail=f"AI provider error: {exc}")
+
+    return {"data": result, "model": settings.gemini_model}

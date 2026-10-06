@@ -4,6 +4,7 @@ Uses the plain REST API via httpx — no vendor SDK needed.
 """
 
 import base64
+import json
 
 import httpx
 
@@ -117,3 +118,55 @@ async def draft_reply(situation: str, document_text: str | None = None) -> str:
         prompt += f"\n\nDocument received:\n{document_text[:6000]}"
     contents = [{"role": "user", "parts": [{"text": prompt}]}]
     return await _generate(DRAFT_SYSTEM_PROMPT, contents, max_tokens=2048)
+
+
+async def generate_json(prompt: str, schema: dict | None = None, max_tokens: int = 2048) -> dict | str:
+    """Generic JSON generation for client apps (e.g. ResumeAI on GitHub Pages).
+
+    Calls Gemini and returns a parsed JSON object when possible, otherwise the
+    plain text reply. When `schema` is given it is embedded in the instruction
+    so the model conforms to the expected shape.
+    """
+    if not _ai_available():
+        raise AINotConfiguredError("Google API key is not configured.")
+
+    system_prompt = (
+        "You are a JSON API for a resume/career web app. "
+        "Respond with ONLY a valid JSON object — no markdown fences, no "
+        "explanatory text. Match the requested structure exactly."
+    )
+    user_text = prompt
+    if schema:
+        user_text += (
+            "\n\nReturn a JSON object matching this structure "
+            f"(keys and types): {json.dumps(schema)}"
+        )
+
+    url = (
+        f"{_GEMINI_BASE}/{settings.gemini_model}"
+        f":generateContent?key={settings.google_api_key}"
+    )
+    payload = {
+        "systemInstruction": {"parts": [{"text": system_prompt}]},
+        "contents": [{"role": "user", "parts": [{"text": user_text}]}],
+        "generationConfig": {
+            "maxOutputTokens": max_tokens,
+            "temperature": 0.4,
+            "responseMimeType": "application/json",
+        },
+    }
+    async with httpx.AsyncClient(timeout=60) as client:
+        resp = await client.post(url, json=payload)
+        resp.raise_for_status()
+        data = resp.json()
+
+    try:
+        text = data["candidates"][0]["content"]["parts"][0]["text"].strip()
+    except (KeyError, IndexError) as exc:
+        raise RuntimeError(f"Unexpected Gemini response: {data}") from exc
+
+    text = text.removeprefix("```json").removeprefix("```").removesuffix("```").strip()
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError:
+        return text
