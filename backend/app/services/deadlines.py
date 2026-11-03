@@ -159,30 +159,40 @@ def extract_dates(text: str, today: date) -> list[dict]:
     found: list[dict] = []
     seen: set[date] = set()
 
-    def push(due: date, kind: str, evidence: str) -> None:
+    def push(due: date, kind: str, evidence: str, marked: bool = False) -> None:
         if due in seen:
             return
         seen.add(due)
-        found.append({"due_date": due, "kind": kind, "evidence": evidence, "source": "document"})
+        found.append(
+            {
+                "due_date": due,
+                "kind": kind,
+                "evidence": evidence,
+                "source": "document",
+                "marked": marked,
+            }
+        )
 
     for match in _ISO_DATE.finditer(text):
         due = _parse_date_token(match.group(3), match.group(2), match.group(1), today)
         if due:
-            push(due, "absolute date", _sentence_around(text, match.start(), match.end()))
+            push(due, "absolute date", _sentence_around(text, match.start(), match.end()), True)
 
     for match in _DOTTED_DATE.finditer(text):
         due = _parse_date_token(match.group(1), match.group(2), match.group(3), today)
         if due:
             prefix = text[max(0, match.start() - 40) : match.start()]
-            kind = "absolute date" if _BY_DATE.search(prefix) else "mentioned date"
-            push(due, kind, _sentence_around(text, match.start(), match.end()))
+            marked = bool(_BY_DATE.search(prefix))
+            kind = "absolute date" if marked else "mentioned date"
+            push(due, kind, _sentence_around(text, match.start(), match.end()), marked)
 
     for match in _SHORT_DATE.finditer(text):
         due = _parse_date_token(match.group(1), match.group(2), None, today)
         if due:
             prefix = text[max(0, match.start() - 40) : match.start()]
-            kind = "absolute date" if _BY_DATE.search(prefix) else "mentioned date"
-            push(due, kind, _sentence_around(text, match.start(), match.end()))
+            marked = bool(_BY_DATE.search(prefix))
+            kind = "absolute date" if marked else "mentioned date"
+            push(due, kind, _sentence_around(text, match.start(), match.end()), marked)
 
     for match in _LONG_DATE.finditer(text):
         month = MONTHS[match.group(2).lower().strip(".")]
@@ -201,7 +211,7 @@ def extract_dates(text: str, today: date) -> list[dict]:
             due = today + timedelta(weeks=amount)
         else:
             due = add_months(today, amount)
-        push(due, "relative deadline", _sentence_around(text, match.start(), match.end()))
+        push(due, "relative deadline", _sentence_around(text, match.start(), match.end()), True)
 
     return found
 
@@ -239,6 +249,15 @@ def normalise_due(value: object, today: date) -> date | None:
     return None
 
 
+def _pick(item: dict, *keys: str) -> str:
+    """Models rename keys freely ("date" vs "due_date") - take the first hit."""
+    for key in keys:
+        value = item.get(key)
+        if isinstance(value, (str, int, float)) and str(value).strip():
+            return str(value).strip()
+    return ""
+
+
 def build_result(text: str, today: date, ai_payload: dict | None) -> dict:
     """Merge deterministic findings with the model's legal context."""
     found = extract_dates(text, today)
@@ -249,21 +268,28 @@ def build_result(text: str, today: date, ai_payload: dict | None) -> dict:
             for item in raw_items[:12]:
                 if not isinstance(item, dict):
                     continue
-                due = normalise_due(item.get("due_date"), today)
+                due = normalise_due(_pick(item, "due_date", "date", "deadline", "iso_date"), today)
                 if not due:
                     continue
                 model_items.append(
                     {
                         "due_date": due,
-                        "title": str(item.get("title") or "Frist").strip()[:120],
-                        "legal_basis": str(item.get("legal_basis") or "").strip()[:160],
-                        "action": str(item.get("action") or "").strip()[:400],
+                        "title": (_pick(item, "title", "type", "label", "name") or "Frist")[:120],
+                        "legal_basis": _pick(item, "legal_basis", "statute", "paragraph", "law")[:160],
+                        "action": _pick(
+                            item, "action", "next_step", "recommendation", "description", "explanation"
+                        )[:400],
                         "confidence": item.get("confidence"),
                     }
                 )
 
     by_date: dict[date, dict] = {}
     for item in found:
+        # A date in the past without a deadline marker is a reference ("Rechnung
+        # vom 12.09.2026"), not something the user can still act on. Showing it
+        # as "overdue" would scare people for no reason.
+        if item["due_date"] < today and not item.get("marked"):
+            continue
         by_date[item["due_date"]] = {
             "due_date": item["due_date"],
             "title": item["kind"],
@@ -305,7 +331,7 @@ def build_result(text: str, today: date, ai_payload: dict | None) -> dict:
             }
         )
 
-    actionable = [r for r in results if r["urgency"] != "overdue" and r["source"] == "document"]
+    actionable = [r for r in results if r["urgency"] != "overdue"]
     overdue = [r for r in results if r["urgency"] == "overdue"]
     if actionable:
         nxt = actionable[0]
@@ -357,10 +383,13 @@ async def check(text: str, today: date) -> dict:
             "in Germany. Find every deadline it creates: dates it names, relative "
             "deadlines it states, and statutory deadlines that apply to its subject "
             "matter (count those from today if the letter gives no trigger date).\n"
-            "Rules: German legal terminology, cite the statute, one concrete action "
-            "per deadline, never invent a paragraph you are unsure about — leave "
-            "legal_basis empty instead. Use ISO dates. Do not repeat the same date "
-            "twice.\n\n--- LETTER START ---\n"
+            "Rules: answer in German. Use exactly these keys per entry: title "
+            "(short German name of the deadline), due_date (ISO YYYY-MM-DD), "
+            "legal_basis (statute, or empty if unsure), action (one concrete step), "
+            "confidence (0-1). Never invent a paragraph you are unsure about. "
+            "Ignore dates that are mere references to the past, such as the date a "
+            "previous invoice was issued. Do not repeat the same date twice."
+            "\n\n--- LETTER START ---\n"
             f"{text}\n--- LETTER END ---"
         )
         result = await ai.generate_json(prompt, _schema(), max_tokens=1024)

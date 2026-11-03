@@ -155,8 +155,8 @@ export default function DocumentReviewScreen() {
       } catch (e) {
         setError(
           e instanceof Error && e.message
-            ? `Analysis failed (${e.message}). If it keeps failing, paste the key text below instead.`
-            : "Analysis failed. Please try again."
+            ? `Prüfung fehlgeschlagen (${e.message}). Falls es bleibt: den Text unten einfügen.`
+            : "Prüfung fehlgeschlagen. Bitte noch einmal versuchen."
         );
       } finally {
         setBusy(false);
@@ -187,7 +187,7 @@ export default function DocumentReviewScreen() {
       if (analysis.status === "rejected") throw analysis.reason;
       setResult(analysis.value);
     } catch (e) {
-      setError(e instanceof Error ? `Analysis failed (${e.message}).` : "Analysis failed.");
+      setError(e instanceof Error ? `Prüfung fehlgeschlagen (${e.message}).` : "Prüfung fehlgeschlagen.");
     } finally {
       setBusy(false);
     }
@@ -195,7 +195,7 @@ export default function DocumentReviewScreen() {
 
   return (
     <ScrollView style={styles.root} contentContainerStyle={styles.container}>
-      <Text style={styles.title}>Review document</Text>
+      <Text style={styles.title}>Dokument prüfen</Text>
       <Text style={styles.subtitle}>
         Upload a photo or scan of the notice — or paste its text — and the AI explains
         what it means, what deadlines matter, and how to respond.
@@ -208,7 +208,7 @@ export default function DocumentReviewScreen() {
         disabled={busy}
       >
         <Text style={styles.primaryButtonText}>
-          {busy ? "Analyzing…" : "Upload image or text file"}
+          {busy ? "Prüfe…" : "Bild oder Datei hochladen"}
         </Text>
       </Pressable>
       <Text style={styles.hint}>
@@ -216,7 +216,7 @@ export default function DocumentReviewScreen() {
         directly. PDFs: copy the text into the box below.
       </Text>
 
-      <Text style={styles.pasteLabel}>Or paste the document text:</Text>
+      <Text style={styles.pasteLabel}>Oder den Text einfügen:</Text>
       <TextInputCard value={pasted} onChangeText={setPasted} onSubmit={analyzePasted} busy={busy} />
 
       {busy && (
@@ -243,12 +243,12 @@ export default function DocumentReviewScreen() {
       {result && (
         <View style={styles.resultCard}>
           <Text style={styles.cardTitle}>
-            AI review{fileName ? ` — ${fileName}` : ""}
+            KI-Prüfung{fileName ? ` — ${fileName}` : ""}
           </Text>
           <Text style={styles.explanation}>{result.explanation}</Text>
           {result.ocr_text ? (
             <View style={styles.ocrBox}>
-              <Text style={styles.ocrLabel}>Extracted text</Text>
+              <Text style={styles.ocrLabel}>Extrahierter Text</Text>
               <Text style={styles.ocrText}>{result.ocr_text}</Text>
             </View>
           ) : null}
@@ -256,11 +256,11 @@ export default function DocumentReviewScreen() {
       )}
 
       <View style={styles.card}>
-        <Text style={styles.cardTitle}>What the AI checks</Text>
-        <Text style={styles.cardText}>• Who sent it and any deadlines</Text>
-        <Text style={styles.cardText}>• Key obligations, accusations, or demands</Text>
-        <Text style={styles.cardText}>• Missing notice periods or unclear fees</Text>
-        <Text style={styles.cardText}>• Anything that looks unfair or unenforceable</Text>
+        <Text style={styles.cardTitle}>Was die KI prüft</Text>
+        <Text style={styles.cardText}>• Absender und alle Fristen</Text>
+        <Text style={styles.cardText}>• Pflichten, Vorwürfe und Forderungen</Text>
+        <Text style={styles.cardText}>• Fehlende Kündigungsfristen oder unklare Gebühren</Text>
+        <Text style={styles.cardText}>• Was unfair oder unwirksam wirkt</Text>
       </View>
     </ScrollView>
   );
@@ -292,7 +292,7 @@ function TextInputCard({
             fontFamily: "inherit",
             resize: "vertical",
           }}
-          placeholder="Paste the letter or contract text here…"
+          placeholder="Brief oder Vertragstext hier einfügen…"
           value={value}
           onChange={(e: any) => onChangeText(e.target.value)}
         />
@@ -303,7 +303,7 @@ function TextInputCard({
         accessibilityRole="button"
         disabled={busy}
       >
-        <Text style={styles.primaryButtonText}>Analyze text</Text>
+        <Text style={styles.primaryButtonText}>Text analysieren</Text>
       </Pressable>
     </View>
   );

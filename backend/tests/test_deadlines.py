@@ -119,6 +119,45 @@ def test_statute_fallback_without_ai():
     assert any("KSchG" in h["legal_basis"] for h in hints)
 
 
+def test_past_reference_date_is_not_a_deadline():
+    text = "Rechnung Nr. 8891 vom 12.09.2026. Bitte zahlen Sie bis zum 20.11.2026."
+    result = deadlines.build_result(text, TODAY, None)
+    dates = [d["due_date"] for d in result["deadlines"]]
+    assert "2026-09-12" not in dates           # invoice date, long gone
+    assert "2026-11-20" in dates               # real deadline
+    assert all(d["urgency"] != "overdue" for d in result["deadlines"])
+
+
+def test_past_deadline_stays_when_letter_marks_it():
+    result = deadlines.build_result("Zahlung bis zum 01.10.2026.", TODAY, None)
+    assert result["deadlines"][0]["due_date"] == "2026-10-01"
+    assert result["deadlines"][0]["urgency"] == "overdue"
+
+
+def test_model_keys_are_parsed_tolerantly():
+    # gemini-3.6-flash answers with date/type/description instead of the asked
+    # keys - that must still produce a labelled deadline
+    payload = {
+        "deadlines": [
+            {
+                "date": "2026-11-20",
+                "type": "Zahlungsfrist",
+                "description": "Betrag überweisen",
+                "original_text": "Bitte zahlen Sie bis zum 20.11.2026.",
+            }
+        ]
+    }
+    result = deadlines.build_result("Bitte zahlen Sie bis zum 20.11.2026.", TODAY, payload)
+    entry = result["deadlines"][0]
+    assert entry["title"] == "Zahlungsfrist"
+    assert entry["action"] == "Betrag überweisen"
+
+
+def test_summary_matches_visible_rows():
+    result = deadlines.build_result(ABMAHNUNG + "\nAuch am 05.12.2026.", TODAY, None)
+    assert str(len(result["deadlines"])) in result["summary"]
+
+
 def test_empty_text_returns_no_deadlines():
     result = deadlines.build_result("", TODAY, None)
     assert result["deadlines"] == []
