@@ -32,6 +32,7 @@ def test_template_carries_dates_and_placeholders():
     assert "[Name]" in draft              # nothing invented on the user's behalf
     assert "keine Rechtsberatung" in draft
     assert result["topic"] == "payment"
+    assert "Nachteil" in draft          # no "Nachtteil" typo
 
 
 def test_template_never_invents_a_letter_date():
