@@ -212,8 +212,8 @@ export default function DocumentReviewScreen() {
         </Text>
       </Pressable>
       <Text style={styles.hint}>
-        Images (JPG/PNG, max 4 MB) get OCR'd automatically. Text files (.txt/.md) work
-        directly. PDFs: copy the text into the box below.
+        Bilder (JPG/PNG, max. 4 MB) liest die App automatisch per OCR. Textdateien
+        (.txt/.md) gehen direkt. PDFs: den Text unten einfügen.
       </Text>
 
       <Text style={styles.pasteLabel}>Oder den Text einfügen:</Text>
@@ -222,7 +222,7 @@ export default function DocumentReviewScreen() {
       {busy && (
         <View style={styles.loadingRow}>
           <ActivityIndicator color={colors.accent} />
-          <Text style={styles.loadingText}>The AI is reading your document…</Text>
+          <Text style={styles.loadingText}>Die KI liest dein Schreiben…</Text>
         </View>
       )}
 
