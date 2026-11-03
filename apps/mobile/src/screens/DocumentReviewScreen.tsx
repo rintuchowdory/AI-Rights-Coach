@@ -40,6 +40,60 @@ async function analyze(
   return res.json();
 }
 
+// ---------------------------------------------------------------- deadlines
+export type Deadline = {
+  due_date: string;
+  days_left: number;
+  urgency: "overdue" | "critical" | "soon" | "later";
+  title: string;
+  legal_basis: string;
+  action: string;
+  evidence: string;
+  confidence: number;
+  source: string;
+};
+
+export type DeadlineResult = {
+  summary: string;
+  deadlines: Deadline[];
+  statute_hints: { action: string; legal_basis: string }[];
+  today: string;
+  disclaimer: string;
+};
+
+const URGENCY_COLOR: Record<Deadline["urgency"], string> = {
+  overdue: colors.danger,
+  critical: "#F97316",
+  soon: "#EAB308",
+  later: colors.success,
+};
+
+const URGENCY_LABEL: Record<Deadline["urgency"], string> = {
+  overdue: "abgelaufen",
+  critical: "jetzt handeln",
+  soon: "bald",
+  later: "später",
+};
+
+/** Deadlines are computed on the server; the client only formats them. */
+async function fetchDeadlines(payload: Record<string, unknown>): Promise<DeadlineResult> {
+  const res = await fetch(`${API_URL}/ai/deadlines`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ ...payload, today: new Date().toISOString().slice(0, 10) }),
+  });
+  if (!res.ok) {
+    const msg = await res.text().catch(() => "");
+    throw new Error(`${res.status}: ${msg.slice(0, 160)}`);
+  }
+  return res.json();
+}
+
+function formatGermanDate(iso: string): string {
+  const [y, m, d] = iso.split("-");
+  return d && m && y ? `${d}.${m}.${y}` : iso;
+}
+
 /** Web file → base64 (without the data-URL prefix) or plain text. */
 async function readWebFile(
   file: File
@@ -65,6 +119,8 @@ export default function DocumentReviewScreen() {
   const [result, setResult] = useState<Analysis | null>(null);
   const [fileName, setFileName] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [deadlines, setDeadlines] = useState<DeadlineResult | null>(null);
+  const [deadlinesError, setDeadlinesError] = useState<string | null>(null);
 
   const pickFile = () => {
     if (busy) return;
@@ -79,10 +135,23 @@ export default function DocumentReviewScreen() {
       if (!file) return;
       setFileName(file.name);
       setBusy(true);
+      setDeadlines(null);
+      setDeadlinesError(null);
       try {
         const parsed = await readWebFile(file);
-        const analysis = await analyze(parsed.mode, parsed.data, parsed.mime);
-        setResult(analysis);
+        const payload =
+          parsed.mode === "text"
+            ? { text: parsed.data }
+            : { image_base64: parsed.data, mime_type: parsed.mime };
+        // The deadline check must never block the explanation.
+        const [analysis, found] = await Promise.allSettled([
+          analyze(parsed.mode, parsed.data, parsed.mime),
+          fetchDeadlines(payload),
+        ]);
+        if (found.status === "fulfilled") setDeadlines(found.value);
+        else setDeadlinesError("Fristen konnten nicht geprüft werden.");
+        if (analysis.status === "rejected") throw analysis.reason;
+        setResult(analysis.value);
       } catch (e) {
         setError(
           e instanceof Error && e.message
@@ -105,9 +174,18 @@ export default function DocumentReviewScreen() {
     setResult(null);
     setBusy(true);
     setFileName("pasted text");
+    setDeadlines(null);
+    setDeadlinesError(null);
     try {
-      const analysis = await analyze("text", text.slice(0, MAX_TEXT_CHARS));
-      setResult(analysis);
+      const body = text.slice(0, MAX_TEXT_CHARS);
+      const [analysis, found] = await Promise.allSettled([
+        analyze("text", body),
+        fetchDeadlines({ text: body }),
+      ]);
+      if (found.status === "fulfilled") setDeadlines(found.value);
+      else setDeadlinesError("Fristen konnten nicht geprüft werden.");
+      if (analysis.status === "rejected") throw analysis.reason;
+      setResult(analysis.value);
     } catch (e) {
       setError(e instanceof Error ? `Analysis failed (${e.message}).` : "Analysis failed.");
     } finally {
@@ -151,6 +229,14 @@ export default function DocumentReviewScreen() {
       {error && (
         <View style={styles.card}>
           <Text style={styles.cardTitle}>⚠️ {error}</Text>
+        </View>
+      )}
+
+      {deadlines && <DeadlinePanel data={deadlines} />}
+
+      {deadlinesError && (
+        <View style={styles.card}>
+          <Text style={styles.cardText}>{deadlinesError}</Text>
         </View>
       )}
 
@@ -219,6 +305,54 @@ function TextInputCard({
       >
         <Text style={styles.primaryButtonText}>Analyze text</Text>
       </Pressable>
+    </View>
+  );
+}
+
+function DeadlinePanel({ data }: { data: DeadlineResult }) {
+  return (
+    <View style={styles.deadlineCard}>
+      <Text style={styles.deadlineHeading}>Fristen</Text>
+      <Text style={styles.deadlineSummary}>{data.summary}</Text>
+
+      {data.deadlines.map((item) => {
+        const tint = URGENCY_COLOR[item.urgency] ?? colors.textMuted;
+        return (
+          <View key={`${item.due_date}-${item.title}`} style={styles.deadlineRow}>
+            <View style={styles.deadlineTopRow}>
+              <View style={[styles.badge, { borderColor: tint }]}>
+                <Text style={[styles.badgeText, { color: tint }]}>
+                  {item.days_left < 0 ? `${Math.abs(item.days_left)} Tage her` : `${item.days_left} Tage`}
+                </Text>
+              </View>
+              <Text style={[styles.deadlineWhen, { color: tint }]}>
+                {formatGermanDate(item.due_date)} · {URGENCY_LABEL[item.urgency] ?? ""}
+              </Text>
+            </View>
+            <Text style={styles.deadlineTitle}>{item.title}</Text>
+            {item.legal_basis ? <Text style={styles.deadlineBasis}>{item.legal_basis}</Text> : null}
+            {item.action ? <Text style={styles.deadlineAction}>{item.action}</Text> : null}
+            {item.evidence ? (
+              <Text style={styles.deadlineEvidence} numberOfLines={2}>
+                „{item.evidence.trim()}“
+              </Text>
+            ) : null}
+          </View>
+        );
+      })}
+
+      {data.deadlines.length === 0 && data.statute_hints.length > 0 && (
+        <View style={styles.deadlineRow}>
+          <Text style={styles.deadlineTitle}>Gesetzliche Fristen zum Thema</Text>
+          {data.statute_hints.map((hint) => (
+            <Text key={hint.legal_basis} style={styles.deadlineAction}>
+              • {hint.action} ({hint.legal_basis})
+            </Text>
+          ))}
+        </View>
+      )}
+
+      <Text style={styles.deadlineDisclaimer}>{data.disclaimer}</Text>
     </View>
   );
 }
@@ -341,5 +475,74 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     fontSize: 12.5,
     lineHeight: 18,
+  },
+  deadlineCard: {
+    backgroundColor: colors.cardAlt,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: 14,
+    gap: 10,
+  },
+  deadlineHeading: {
+    color: colors.textPrimary,
+    fontSize: 16,
+    fontWeight: "800",
+  },
+  deadlineSummary: {
+    color: colors.textSecondary,
+    fontSize: 13.5,
+    lineHeight: 19,
+  },
+  deadlineRow: {
+    backgroundColor: colors.bgElevated,
+    borderRadius: 12,
+    padding: 12,
+    gap: 4,
+  },
+  deadlineTopRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  badge: {
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+  },
+  badgeText: {
+    fontSize: 12,
+    fontWeight: "800",
+  },
+  deadlineWhen: {
+    fontSize: 12.5,
+    fontWeight: "700",
+  },
+  deadlineTitle: {
+    color: colors.textPrimary,
+    fontSize: 14.5,
+    fontWeight: "700",
+  },
+  deadlineBasis: {
+    color: colors.accent,
+    fontSize: 12.5,
+    fontWeight: "700",
+  },
+  deadlineAction: {
+    color: colors.textSecondary,
+    fontSize: 13,
+    lineHeight: 18,
+  },
+  deadlineEvidence: {
+    color: colors.textMuted,
+    fontSize: 12,
+    fontStyle: "italic",
+    lineHeight: 17,
+  },
+  deadlineDisclaimer: {
+    color: colors.textMuted,
+    fontSize: 11.5,
+    lineHeight: 16,
   },
 });

@@ -1,8 +1,10 @@
+from datetime import date
+
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
 from app.config import settings
-from app.services import ai
+from app.services import ai, deadlines
 
 router = APIRouter(prefix="/ai", tags=["ai"])
 
@@ -98,3 +100,66 @@ async def generate(payload: GenerateRequest):
         raise HTTPException(status_code=502, detail=f"AI provider error: {exc}")
 
     return {"data": result, "model": settings.gemini_model}
+
+
+class DeadlineRequest(BaseModel):
+    """Either paste the letter text or send a photo of it."""
+
+    text: str | None = Field(default=None, max_length=20000)
+    image_base64: str | None = None
+    mime_type: str = Field(default="image/jpeg", pattern="^image/(jpeg|png|webp|heic|heif)$")
+    # Client clock, so a wrong device date cannot shift every countdown.
+    today: date | None = None
+
+
+class DeadlineItem(BaseModel):
+    due_date: str
+    days_left: int
+    urgency: str
+    title: str
+    legal_basis: str = ""
+    action: str = ""
+    evidence: str = ""
+    confidence: float
+    source: str
+
+
+class DeadlineResponse(BaseModel):
+    summary: str
+    deadlines: list[DeadlineItem]
+    statute_hints: list[dict]
+    today: str
+    disclaimer: str
+    ocr_text: str | None = None
+
+
+@router.post("/deadlines", response_model=DeadlineResponse)
+async def find_deadlines(payload: DeadlineRequest):
+    """Extract every deadline (Frist) from a letter, with days left and legal basis.
+
+    Never fails because of the AI provider: the deterministic date extraction
+    always runs, the model only adds legal context on top.
+    """
+    if not payload.text and not payload.image_base64:
+        raise HTTPException(status_code=422, detail="Provide 'text' or 'image_base64'.")
+
+    today = payload.today or date.today()
+    source = payload.text
+    ocr_text = None
+    if payload.image_base64:
+        try:
+            ocr_text = await ai.ocr_image(payload.image_base64, payload.mime_type)
+        except ai.AINotConfiguredError:
+            raise HTTPException(
+                status_code=503,
+                detail="OCR needs an AI provider. Set GOOGLE_API_KEY, or paste the text instead.",
+            )
+        except Exception as exc:
+            raise HTTPException(status_code=502, detail=f"OCR error: {exc}")
+        source = ocr_text or source
+
+    if not source or not source.strip():
+        raise HTTPException(status_code=422, detail="No readable text found in the document.")
+
+    result = await deadlines.check(source, today)
+    return DeadlineResponse(ocr_text=ocr_text, **result)

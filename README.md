@@ -4,6 +4,24 @@ An AI-assisted app that helps people understand their legal rights, make sense o
 documents (letters, notices, forms), and manage cases — with OCR, plain-language document
 explanation, and guided reply drafting.
 
+## Deadlines (Fristen)
+
+`POST /ai/deadlines` finds every deadline in a letter and answers with the days
+left, the legal basis and one concrete next step per deadline:
+
+```json
+{ "text": "Bitte zahlen Sie bis zum 17.11.2026 ..." }
+```
+
+Two layers run on purpose. Deterministic extraction handles the date shapes
+German letters actually use (`bis zum 17.11.2026`, `innerhalb von zwei Wochen`,
+`5.1.` without a year) and works with no API key at all. Gemini adds the legal
+context on top. Countdowns are computed on the server, so a wrong device clock
+cannot shift a deadline. Every response carries the "keine Rechtsberatung"
+disclaimer.
+
+Run the tests with `cd backend && pytest`.
+
 ## Tech stack
 
 - **Mobile app**: Expo (React Native)
