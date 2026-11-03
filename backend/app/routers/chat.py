@@ -33,6 +33,8 @@ async def chat(payload: ChatRequest):
             status_code=503,
             detail="AI provider not configured. Set GOOGLE_API_KEY on the backend.",
         )
+    except ai.AIRateLimitedError as exc:
+        raise HTTPException(status_code=503, detail=str(exc))
     except Exception as exc:  # provider outage / bad response
-        raise HTTPException(status_code=502, detail=f"AI provider error: {exc}")
+        raise HTTPException(status_code=502, detail=f"AI provider error: {ai.redact(exc)}")
     return ChatResponse(reply=reply, model="gemini")

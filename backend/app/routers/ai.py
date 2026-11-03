@@ -48,7 +48,7 @@ async def analyze_document(payload: AnalyzeRequest):
     except HTTPException:
         raise
     except Exception as exc:
-        raise HTTPException(status_code=502, detail=f"AI provider error: {exc}")
+        raise HTTPException(status_code=502, detail=f"AI provider error: {ai.redact(exc)}")
     return AnalyzeResponse(ocr_text=ocr_text, explanation=explanation, model="gemini")
 
 
@@ -73,7 +73,7 @@ async def draft_reply(payload: DraftRequest):
             detail="AI provider not configured. Set GOOGLE_API_KEY on the backend.",
         )
     except Exception as exc:
-        raise HTTPException(status_code=502, detail=f"AI provider error: {exc}")
+        raise HTTPException(status_code=502, detail=f"AI provider error: {ai.redact(exc)}")
     return DraftResponse(draft=draft, model="gemini")
 
 
@@ -96,8 +96,12 @@ async def generate(payload: GenerateRequest):
             status_code=503,
             detail="AI provider not configured. Set GOOGLE_API_KEY on the backend.",
         )
+    except ai.AIRateLimitedError as exc:
+        raise HTTPException(status_code=503, detail=str(exc))
     except RuntimeError as exc:
-        raise HTTPException(status_code=502, detail=f"AI provider error: {exc}")
+        raise HTTPException(status_code=502, detail=f"AI provider error: {ai.redact(exc)}")
+    except Exception as exc:  # never leak a 500 or a key to the client
+        raise HTTPException(status_code=502, detail=f"AI provider error: {ai.redact(exc)}")
 
     return {"data": result, "model": settings.gemini_model}
 
@@ -155,7 +159,7 @@ async def find_deadlines(payload: DeadlineRequest):
                 detail="OCR needs an AI provider. Set GOOGLE_API_KEY, or paste the text instead.",
             )
         except Exception as exc:
-            raise HTTPException(status_code=502, detail=f"OCR error: {exc}")
+            raise HTTPException(status_code=502, detail=f"OCR error: {ai.redact(exc)}")
         source = ocr_text or source
 
     if not source or not source.strip():

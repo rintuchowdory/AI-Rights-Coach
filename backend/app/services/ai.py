@@ -5,6 +5,7 @@ Uses the plain REST API via httpx — no vendor SDK needed.
 
 import base64
 import json
+import re
 
 import httpx
 
@@ -37,12 +38,40 @@ DRAFT_SYSTEM_PROMPT = (
 )
 
 
+def _raise_for_provider(resp: httpx.Response) -> None:
+    """Turn provider errors into clean, keyword-free messages."""
+    if resp.is_success:
+        return
+    if resp.status_code == 429:
+        raise AIRateLimitedError(
+            "The AI provider is rate limiting this key (free tier). Try again in a minute."
+        )
+    raise RuntimeError(
+        f"AI provider returned {resp.status_code}: {redact(resp.text)[:300]}"
+    )
+
+
 def _ai_available() -> bool:
     return bool(settings.google_api_key)
 
 
 class AINotConfiguredError(RuntimeError):
     pass
+
+
+class AIRateLimitedError(RuntimeError):
+    """Free-tier quota hit. Worth telling the user to retry, not to debug."""
+
+
+_KEY_IN_URL = re.compile(r"([?&]key=)[A-Za-z0-9_\-]+")
+
+
+def redact(text: str) -> str:
+    """Error strings from httpx carry the request URL, which carries the key.
+
+    Never let an API key reach a client, a log line or an error message.
+    """
+    return _KEY_IN_URL.sub(r"\1[redacted]", str(text))
 
 
 async def _generate(
@@ -65,7 +94,7 @@ async def _generate(
     }
     async with httpx.AsyncClient(timeout=60) as client:
         resp = await client.post(url, json=payload)
-        resp.raise_for_status()
+        _raise_for_provider(resp)
         data = resp.json()
 
     try:
@@ -157,7 +186,7 @@ async def generate_json(prompt: str, schema: dict | None = None, max_tokens: int
     }
     async with httpx.AsyncClient(timeout=60) as client:
         resp = await client.post(url, json=payload)
-        resp.raise_for_status()
+        _raise_for_provider(resp)
         data = resp.json()
 
     try:
