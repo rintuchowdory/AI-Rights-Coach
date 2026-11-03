@@ -4,7 +4,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
 from app.config import settings
-from app.services import ai, deadlines
+from app.services import ai, deadlines, letter_template
 
 router = APIRouter(prefix="/ai", tags=["ai"])
 
@@ -60,21 +60,36 @@ class DraftRequest(BaseModel):
 class DraftResponse(BaseModel):
     draft: str
     model: str
+    # "ai" = model text, "template" = deterministic skeleton because the
+    # provider was unavailable (rate limit, outage, missing key)
+    source: str = "ai"
+    note: str | None = None
 
 
 @router.post("/draft-reply", response_model=DraftResponse)
 async def draft_reply(payload: DraftRequest):
-    """Generate a calm, factual reply letter for the user's situation."""
+    """Generate a calm, factual reply letter for the user's situation.
+
+    The AI writes the letter when it can. When the provider is rate limited or
+    down, the endpoint answers with a deterministic template built from the
+    same input instead of failing - a reply you can send beats an error box.
+    """
+    reason = ""
     try:
         draft = await ai.draft_reply(payload.situation, payload.document_text)
-    except ai.AINotConfiguredError:
-        raise HTTPException(
-            status_code=503,
-            detail="AI provider not configured. Set GOOGLE_API_KEY on the backend.",
-        )
+        return DraftResponse(draft=draft, model="gemini", source="ai")
+    except (ai.AINotConfiguredError, ai.AIRateLimitedError) as exc:
+        reason = "Anbieter nicht erreichbar"
     except Exception as exc:
-        raise HTTPException(status_code=502, detail=f"AI provider error: {ai.redact(exc)}")
-    return DraftResponse(draft=draft, model="gemini")
+        reason = ai.redact(exc)
+
+    fallback = letter_template.build_reply(
+        payload.situation, payload.document_text, date.today()
+    )
+    note = fallback["note"]
+    if reason and reason != "Anbieter nicht erreichbar":
+        note = f"{note} ({reason})"
+    return DraftResponse(draft=fallback["draft"], model="template", source="template", note=note)
 
 
 class GenerateRequest(BaseModel):

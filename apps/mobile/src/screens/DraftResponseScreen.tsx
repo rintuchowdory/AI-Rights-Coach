@@ -11,10 +11,12 @@ import {
 import { API_URL } from "../api/client";
 import { colors } from "../theme";
 
+type DraftResult = { draft: string; source: string; note: string | null };
+
 async function draftReply(
   situation: string,
   documentText: string
-): Promise<string> {
+): Promise<DraftResult> {
   const res = await fetch(`${API_URL}/ai/draft-reply`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -27,14 +29,15 @@ async function draftReply(
     const msg = await res.text().catch(() => "");
     throw new Error(`${res.status}: ${msg.slice(0, 160)}`);
   }
-  const data = (await res.json()) as { draft: string };
-  return data.draft;
+  const data = (await res.json()) as DraftResult;
+  return data;
 }
 
 export default function DraftResponseScreen() {
   const [situation, setSituation] = useState("");
   const [documentText, setDocumentText] = useState("");
   const [draft, setDraft] = useState<string | null>(null);
+  const [note, setNote] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -44,14 +47,16 @@ export default function DraftResponseScreen() {
     setError(null);
     setBusy(true);
     setDraft(null);
+    setNote(null);
     try {
-      const text = await draftReply(situationTrimmed, documentText);
-      setDraft(text);
+      const result = await draftReply(situationTrimmed, documentText);
+      setDraft(result.draft);
+      setNote(result.note ?? null);
     } catch (e) {
       setError(
         e instanceof Error
-          ? `Draft failed (${e.message}). Try again in a moment.`
-          : "Draft failed. Please try again."
+          ? `Entwurf fehlgeschlagen (${e.message}). Gleich noch einmal versuchen.`
+          : "Entwurf fehlgeschlagen. Bitte noch einmal versuchen."
       );
     } finally {
       setBusy(false);
@@ -60,16 +65,17 @@ export default function DraftResponseScreen() {
 
   return (
     <ScrollView style={styles.root} contentContainerStyle={styles.container}>
-      <Text style={styles.title}>Draft response</Text>
+      <Text style={styles.title}>Antwort schreiben</Text>
       <Text style={styles.subtitle}>
-        Describe your situation — the AI writes a calm, factual reply you can send.
+        Beschreibe die Lage — du bekommst einen sachlichen Antwortbrief, den du
+        abschicken kannst.
       </Text>
 
-      <Text style={styles.label}>1. What happened?</Text>
-      <Box placeholder="e.g. My landlord wants to keep part of my deposit for repainting after 4 years of tenancy…" value={situation} onChangeText={setSituation} minLines={3} />
+      <Text style={styles.label}>1. Was ist passiert?</Text>
+      <Box placeholder="z. B. Mein Vermieter will nach vier Jahren Miete einen Teil der Kaution für Schönheitsreparaturen einbehalten…" value={situation} onChangeText={setSituation} minLines={3} />
 
-      <Text style={styles.label}>2. Received a letter? (optional)</Text>
-      <Box placeholder="Paste the notice or claim text here…" value={documentText} onChangeText={setDocumentText} minLines={3} />
+      <Text style={styles.label}>2. Schreiben erhalten? (optional)</Text>
+      <Box placeholder="Text des Schreibens hier einfügen…" value={documentText} onChangeText={setDocumentText} minLines={3} />
 
       <Pressable
         style={[styles.primaryButton, busy && styles.buttonDisabled]}
@@ -78,14 +84,14 @@ export default function DraftResponseScreen() {
         disabled={busy}
       >
         <Text style={styles.primaryButtonText}>
-          {busy ? "Writing your draft…" : "Generate draft"}
+          {busy ? "Schreibe deinen Entwurf…" : "Entwurf erstellen"}
         </Text>
       </Pressable>
 
       {busy && (
         <View style={styles.loadingRow}>
           <ActivityIndicator color={colors.accent} />
-          <Text style={styles.loadingText}>This usually takes a few seconds…</Text>
+          <Text style={styles.loadingText}>Das dauert ein paar Sekunden…</Text>
         </View>
       )}
 
@@ -97,18 +103,19 @@ export default function DraftResponseScreen() {
 
       {draft && (
         <View style={styles.resultCard}>
-          <Text style={styles.previewLabel}>Your draft</Text>
+          {note ? <Text style={styles.noteText}>{note}</Text> : null}
+          <Text style={styles.previewLabel}>Dein Entwurf</Text>
           <Text style={styles.draftText}>{draft}</Text>
           {Platform.OS === "web" && <CopyButton text={draft} />}
         </View>
       )}
 
       <View style={styles.card}>
-        <Text style={styles.cardTitle}>Suggested structure</Text>
-        <Text style={styles.cardText}>1. Acknowledge receipt of the document.</Text>
-        <Text style={styles.cardText}>2. State the key facts without admitting fault.</Text>
-        <Text style={styles.cardText}>3. Ask for clarification or supporting documents.</Text>
-        <Text style={styles.cardText}>4. Set a reasonable timeline for your reply.</Text>
+        <Text style={styles.cardTitle}>Aufbau (Vorschlag)</Text>
+        <Text style={styles.cardText}>1. Eingang des Schreibens bestätigen.</Text>
+        <Text style={styles.cardText}>2. Sachverhalt schildern, ohne Schuld einzuräumen.</Text>
+        <Text style={styles.cardText}>3. Um Klärung und Unterlagen bitten.</Text>
+        <Text style={styles.cardText}>4. Eine angemessene Frist setzen.</Text>
       </View>
     </ScrollView>
   );
@@ -257,6 +264,11 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     fontSize: 13.5,
     lineHeight: 19,
+  },
+  noteText: {
+    color: colors.textMuted,
+    fontSize: 12.5,
+    lineHeight: 18,
   },
   draftText: {
     color: colors.textPrimary,
