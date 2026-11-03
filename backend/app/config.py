@@ -11,6 +11,8 @@ class Settings(BaseSettings):
     ocr_provider_api_key: str = ""  # generic fallback slot
     google_api_key: str = ""  # Google AI Studio key for Gemini (env: GOOGLE_API_KEY)
     gemini_model: str = "gemini-3.6-flash"
+    groq_api_key: str = ""  # fallback provider (env: GROQ_API_KEY)
+    groq_model: str = "openai/gpt-oss-120b"
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
