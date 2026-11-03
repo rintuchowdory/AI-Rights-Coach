@@ -64,6 +64,9 @@ DISCLAIMER = (
     "Arbeitsplatz oder die Wohnung betreffen, Rat bei einer Rechtsberatung."
 )
 
+KIND_DEADLINE = "Frist laut Schreiben"
+KIND_MENTIONED = "Genanntes Datum"
+
 MONTHS = {
     "januar": 1, "jan": 1,
     "februar": 2, "feb": 2,
@@ -147,11 +150,20 @@ def _parse_date_token(day: str, month: str, year: str | None, today: date) -> da
         return None
 
 
-def _sentence_around(text: str, start: int, end: int, width: int = 90) -> str:
-    left = max(0, start - width)
-    right = min(len(text), end + width)
-    snippet = text[left:right].replace("\n", " ")
-    return re.sub(r"\s+", " ", snippet).strip()
+_SENTENCE_BREAK = re.compile(r"[.!?\n]")
+
+
+def _sentence_around(text: str, start: int, end: int, max_len: int = 220) -> str:
+    """Quote the sentence the date sits in — a fixed window cuts words in half."""
+    left = 0
+    for match in _SENTENCE_BREAK.finditer(text, 0, start):
+        left = match.end()
+    right_match = _SENTENCE_BREAK.search(text, end)
+    right = right_match.end() if right_match else len(text)
+    snippet = re.sub(r"\s+", " ", text[left:right]).strip()
+    if len(snippet) > max_len:
+        snippet = snippet[: max_len - 1].rstrip() + "…"
+    return snippet
 
 
 def extract_dates(text: str, today: date) -> list[dict]:
@@ -176,14 +188,14 @@ def extract_dates(text: str, today: date) -> list[dict]:
     for match in _ISO_DATE.finditer(text):
         due = _parse_date_token(match.group(3), match.group(2), match.group(1), today)
         if due:
-            push(due, "absolute date", _sentence_around(text, match.start(), match.end()), True)
+            push(due, KIND_DEADLINE, _sentence_around(text, match.start(), match.end()), True)
 
     for match in _DOTTED_DATE.finditer(text):
         due = _parse_date_token(match.group(1), match.group(2), match.group(3), today)
         if due:
             prefix = text[max(0, match.start() - 40) : match.start()]
             marked = bool(_BY_DATE.search(prefix))
-            kind = "absolute date" if marked else "mentioned date"
+            kind = KIND_DEADLINE if marked else KIND_MENTIONED
             push(due, kind, _sentence_around(text, match.start(), match.end()), marked)
 
     for match in _SHORT_DATE.finditer(text):
@@ -191,7 +203,7 @@ def extract_dates(text: str, today: date) -> list[dict]:
         if due:
             prefix = text[max(0, match.start() - 40) : match.start()]
             marked = bool(_BY_DATE.search(prefix))
-            kind = "absolute date" if marked else "mentioned date"
+            kind = KIND_DEADLINE if marked else KIND_MENTIONED
             push(due, kind, _sentence_around(text, match.start(), match.end()), marked)
 
     for match in _LONG_DATE.finditer(text):
@@ -211,7 +223,7 @@ def extract_dates(text: str, today: date) -> list[dict]:
             due = today + timedelta(weeks=amount)
         else:
             due = add_months(today, amount)
-        push(due, "relative deadline", _sentence_around(text, match.start(), match.end()), True)
+        push(due, KIND_DEADLINE, _sentence_around(text, match.start(), match.end()), True)
 
     return found
 
@@ -223,6 +235,12 @@ def statute_fallback(text: str) -> list[dict]:
         if pattern.search(text):
             hints.append({"action": action, "legal_basis": basis})
     return hints
+
+
+def _de_date(iso: str) -> str:
+    """2026-11-17 -> 17.11.2026, for German prose."""
+    parts = iso.split("-")
+    return ".".join(reversed(parts)) if len(parts) == 3 else iso
 
 
 def _urgency(days_left: int) -> str:
@@ -335,15 +353,18 @@ def build_result(text: str, today: date, ai_payload: dict | None) -> dict:
     overdue = [r for r in results if r["urgency"] == "overdue"]
     if actionable:
         nxt = actionable[0]
+        due_de = _de_date(nxt["due_date"])
         summary = (
-            f"{len(actionable)} Frist erkannt. Die nächste endet am "
-            f"{nxt['due_date']} ({nxt['days_left']} Tage)."
+            f"{len(actionable)} Frist erkannt. Die nächste endet am {due_de} "
+            f"({nxt['days_left']} Tage)."
             if len(actionable) == 1
-            else f"{len(actionable)} Fristen erkannt. Die nächste endet am "
-            f"{nxt['due_date']} ({nxt['days_left']} Tage)."
+            else f"{len(actionable)} Fristen erkannt. Die nächste endet am {due_de} "
+            f"({nxt['days_left']} Tage)."
         )
     elif overdue:
-        summary = f"Die genannte Frist ist bereits abgelaufen ({overdue[0]['due_date']})."
+        summary = (
+            f"Die genannte Frist ist bereits abgelaufen ({_de_date(overdue[0]['due_date'])})."
+        )
     else:
         summary = "Keine konkrete Frist im Text erkannt."
 

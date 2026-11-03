@@ -197,8 +197,8 @@ export default function DocumentReviewScreen() {
     <ScrollView style={styles.root} contentContainerStyle={styles.container}>
       <Text style={styles.title}>Dokument prüfen</Text>
       <Text style={styles.subtitle}>
-        Upload a photo or scan of the notice — or paste its text — and the AI explains
-        what it means, what deadlines matter, and how to respond.
+        Foto oder Scan des Schreibens hochladen oder den Text einfügen. Die App
+        erklärt, was es bedeutet, welche Fristen laufen und wie du antwortest.
       </Text>
 
       <Pressable
