@@ -86,10 +86,11 @@ def build_reply(situation: str, document_text: str | None, today: date) -> dict:
         past = sorted(d["due_date"] for d in found if d["due_date"] < today)
         letter_date = past[-1] if past else None
 
-    reference = "Ihr Schreiben"
-    if letter_date:
-        reference += f" vom {deadlines._de_date(letter_date.isoformat())}"
-    reference += " zum oben genannten Vorgang"
+    # "zu Ihrem Schreiben" (dative) in the subject, "Ihr Schreiben" (nominative)
+    # in the sentence - German case, not a cosmetic detail.
+    date_part = f" vom {deadlines._de_date(letter_date.isoformat())}" if letter_date else ""
+    subject_ref = f"Ihrem Schreiben{date_part}"
+    body_ref = f"Ihr Schreiben{date_part}"
 
     deadline_line = ""
     if upcoming:
@@ -115,11 +116,11 @@ def build_reply(situation: str, document_text: str | None, today: date) -> dict:
 
 [Ort], den [Datum]
 
-Betreff: Stellungnahme zu {reference}
+Betreff: Stellungnahme zu {subject_ref}
 
 Sehr geehrte Damen und Herren,
 
-{reference} habe ich erhalten und geprüft.{situation_line}
+{body_ref} habe ich erhalten und geprüft.{situation_line}
 
 {_FACTS[topic]}{deadline_line}
 

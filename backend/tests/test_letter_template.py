@@ -36,7 +36,16 @@ def test_template_carries_dates_and_placeholders():
 
 def test_template_never_invents_a_letter_date():
     result = letter_template.build_reply("Kündigung erhalten", "Kündigung ohne Datum.", TODAY)
-    assert "vom " not in result["draft"].split("Betreff:")[1].split("\n")[0]
+    subject = result["draft"].split("Betreff:")[1].split("\n")[0]
+    assert "vom " not in subject
+
+
+def test_subject_uses_correct_german_case():
+    result = letter_template.build_reply("Kaution", LETTER, TODAY)
+    subject = result["draft"].split("Betreff:")[1].split("\n")[0]
+    body = result["draft"].split("Sehr geehrte")[1]
+    assert "Stellungnahme zu Ihrem Schreiben vom 12.09.2026" in subject
+    assert "Ihr Schreiben vom 12.09.2026 habe ich erhalten" in body
 
 
 def test_template_without_letter_still_usable():
