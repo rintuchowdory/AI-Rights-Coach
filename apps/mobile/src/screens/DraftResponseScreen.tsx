@@ -168,7 +168,7 @@ function CopyButton({ text }: { text: string }) {
         });
       }}
     >
-      <Text style={styles.copyButtonText}>{copied ? "Copied ✓" : "Copy draft"}</Text>
+      <Text style={styles.copyButtonText}>{copied ? "Kopiert ✓" : "Entwurf kopieren"}</Text>
     </Pressable>
   );
 }

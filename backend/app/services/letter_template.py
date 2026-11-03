@@ -99,7 +99,7 @@ def build_reply(situation: str, document_text: str | None, today: date) -> dict:
             f"\n\nIhre Frist zum {deadlines._de_date(due.isoformat())} habe ich zur Kenntnis "
             "genommen. Da ich den Sachverhalt noch prüfen muss, bitte ich vorsorglich um "
             "eine Fristverlängerung von zwei Wochen. Einer Verlängerung entsteht kein "
-            "Nachtteil, da der Vorgang dadurch nur einmal statt mehrfach bearbeitet wird."
+            "Nachteil, da der Vorgang dadurch nur einmal statt mehrfach bearbeitet wird."
         )
 
     situation_line = ""
