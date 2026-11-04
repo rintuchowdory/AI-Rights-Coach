@@ -74,6 +74,11 @@ export default function DraftResponseScreen() {
       <Text style={styles.label}>1. Was ist passiert?</Text>
       <Box placeholder="z. B. Mein Vermieter will nach vier Jahren Miete einen Teil der Kaution für Schönheitsreparaturen einbehalten…" value={situation} onChangeText={setSituation} minLines={3} />
 
+      <Text style={styles.privacyNote}>
+        Deine Angaben gehen zur Verarbeitung an Google und, wenn das nicht antwortet,
+        an Groq. Details unter Mehr → Datenschutz.
+      </Text>
+
       <Text style={styles.label}>2. Schreiben erhalten? (optional)</Text>
       <Box placeholder="Text des Schreibens hier einfügen…" value={documentText} onChangeText={setDocumentText} minLines={3} />
 
@@ -193,6 +198,15 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     fontSize: 14.5,
     lineHeight: 20,
+    marginBottom: 4,
+  },
+  privacyNote: {
+    color: colors.textMuted,
+    fontSize: 11.5,
+    lineHeight: 16,
+    backgroundColor: colors.cardAlt,
+    borderRadius: 10,
+    padding: 10,
     marginBottom: 4,
   },
   label: {

@@ -216,6 +216,12 @@ export default function DocumentReviewScreen() {
         (.txt/.md) gehen direkt. PDFs: den Text unten einfügen.
       </Text>
 
+      <Text style={styles.privacyNote}>
+        Deine Eingaben gehen zur Analyse an Google und, wenn das nicht antwortet, an
+        Groq. Bei sehr sensiblen Unterlagen lieber nur die entscheidenden Absätze
+        einfügen. Details unter Mehr → Datenschutz. Keine Rechtsberatung.
+      </Text>
+
       <Text style={styles.pasteLabel}>Oder den Text einfügen:</Text>
       <TextInputCard value={pasted} onChangeText={setPasted} onSubmit={analyzePasted} busy={busy} />
 
@@ -399,6 +405,14 @@ const styles = StyleSheet.create({
     lineHeight: 17,
     textAlign: "center",
     paddingHorizontal: 8,
+  },
+  privacyNote: {
+    color: colors.textMuted,
+    fontSize: 11.5,
+    lineHeight: 16,
+    backgroundColor: colors.cardAlt,
+    borderRadius: 10,
+    padding: 10,
   },
   pasteLabel: {
     color: colors.textPrimary,

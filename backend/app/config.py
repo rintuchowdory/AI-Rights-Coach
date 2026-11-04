@@ -13,6 +13,9 @@ class Settings(BaseSettings):
     gemini_model: str = "gemini-3.6-flash"
     groq_api_key: str = ""  # fallback provider (env: GROQ_API_KEY)
     groq_model: str = "openai/gpt-oss-120b"
+    # "gemini" oder "groq". Google erlaubt in den Gemini-API-Zusatzbedingungen
+    # fuer API-Clients, die EEA-Nutzern angeboten werden, nur Paid Services.
+    ai_primary: str = "gemini"
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 

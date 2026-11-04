@@ -200,20 +200,28 @@ async def _generate(
     global last_provider
     first_error: Exception | None = None
 
-    if _ai_available():
-        try:
-            text = await _gemini_call(system_prompt, contents, max_tokens, json_mode)
-            last_provider = f"gemini/{settings.gemini_model}"
-            return text
-        except (AINotConfiguredError, AIRateLimitedError, RuntimeError) as exc:
-            first_error = exc
+    async def ask_gemini() -> str:
+        return await _gemini_call(system_prompt, contents, max_tokens, json_mode)
 
-    if _groq_available():
+    async def ask_groq() -> str:
+        return await _groq_call(
+            system_prompt, _contents_to_text(contents), max_tokens, json_mode
+        )
+
+    primary_is_groq = (settings.ai_primary or "gemini").lower() == "groq"
+    providers = [("groq", ask_groq), ("gemini", ask_gemini)]
+    if not primary_is_groq:
+        providers.reverse()
+
+    for name, call in providers:
+        if name == "gemini" and not _ai_available():
+            continue
+        if name == "groq" and not _groq_available():
+            continue
         try:
-            text = await _groq_call(
-                system_prompt, _contents_to_text(contents), max_tokens, json_mode
-            )
-            last_provider = f"groq/{settings.groq_model}"
+            text = await call()
+            model = settings.groq_model if name == "groq" else settings.gemini_model
+            last_provider = f"{name}/{model}"
             return text
         except (AINotConfiguredError, AIRateLimitedError, RuntimeError) as exc:
             first_error = first_error or exc

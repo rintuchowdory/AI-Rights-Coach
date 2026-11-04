@@ -29,7 +29,7 @@ function LegalPage({ title, intro, sections }: { title: string; intro: string; s
         </View>
       ))}
       <Text style={styles.footer}>
-        Stand: 4. November 2026. Diese Seite beschreibt den aktuellen technischen Stand der App.
+        Stand: 4. November 2026. Diese Seite beschreibt den technischen Stand der veröffentlichten App auf ai-rights-coach.pages.dev.
       </Text>
     </ScrollView>
   );
@@ -103,45 +103,62 @@ export function DatenschutzScreen() {
           ],
         },
         {
-          heading: "Welche Daten verarbeitet werden",
+          heading: "Kurz gesagt",
           body: [
-            "Du kannst ohne Konto und ohne Anmeldung arbeiten. Verarbeitet werden nur die Inhalte, die du selbst eingibst oder hochlädst: der Text eines Briefes, ein Foto oder Scan davon, deine Schilderung und deine Chat-Nachrichten.",
-            "Es gibt keine Anmeldung, keine Profile, keine Cookies zur Werbung und kein Tracking. Wir legen keine Datenbank an, in der deine Fälle gespeichert bleiben.",
+            "Die App funktioniert ohne Konto und ohne Anmeldung. Sie setzt keine Cookies, legt keinen Speicher in deinem Browser an und legt keine Datenbank an, in der deine Briefe oder Fälle bleiben.",
+            "Deine Eingaben werden nur übertragen, damit die Analyse, die Fristenerkennung oder der Briefentwurf entstehen kann, den du gerade auslöst.",
           ],
         },
         {
-          heading: "Wo deine Eingaben hingehen",
+          heading: "Welche Daten verarbeitet werden",
           body: [
-            "Damit die App den Text erklären, Fristen erkennen und einen Antwortbrief entwerfen kann, wird dein Text an einen KI-Dienst übertragen: Google (Gemini API) und, wenn dieser nicht antwortet, an Groq, Inc. Bilder werden zur Texterkennung an Google übertragen.",
-            "Die App selbst läuft bei Render (Hosting des Servers) und wird über Cloudflare Pages ausgeliefert. Dabei können technische Verbindungsdaten wie IP-Adresse und Zeitpunkt anfallen.",
-            "Bei diesen Anbietern kann eine Verarbeitung außerhalb der EU, insbesondere in den USA, stattfinden. Es gelten zusätzlich deren Datenschutzbedingungen.",
+            "Nur das, was du selbst eingibst oder hochlädst: der Text eines Briefes, ein Foto oder Scan davon, deine Schilderung und deine Chat-Nachrichten.",
+            "Dazu fallen technische Verbindungsdaten an, die jeder Webserver sieht: IP-Adresse, Zeitpunkt, abgerufene Adresse und Browser-Kennung.",
+          ],
+        },
+        {
+          heading: "Wo verarbeitet wird",
+          body: [
+            "Der Server der App läuft in Frankfurt am Main, also innerhalb der EU (Anbieter: Render). Die App-Dateien werden über Cloudflare Pages ausgeliefert.",
+            "Für die Textanalyse und die Texterkennung von Bildern wird dein Inhalt an Google (Gemini API) übertragen. Antwortet Google nicht, übernimmt Groq, Inc. Beide Anbieter verarbeiten in Rechenzentren in den USA.",
+            "Groq speichert deine Ein- und Ausgaben standardmäßig nicht. Nur zur Fehlersuche oder Missbrauchsprüfung können Protokolle bis zu 30 Tage aufbewahrt werden; das lässt sich in den Konto-Einstellungen abstellen. Für Übermittlungen in die USA stützt sich Groq auf die EU-Standardvertragsklauseln.",
+            "Google verwendet bei kostenpflichtiger Nutzung deine Inhalte nicht zur Verbesserung seiner Produkte. Für Nutzerinnen und Nutzer im Europäischen Wirtschaftsraum gelten diese Bedingungen auch beim kostenlosen Kontingent. Außerhalb des EWR kann Google bei kostenlosem Kontingent eingesandte Inhalte zur Produktverbesserung nutzen und von Menschen prüfen lassen.",
           ],
         },
         {
           heading: "Rechtsgrundlage",
           body: [
-            "Rechtsgrundlage ist Artikel 6 Absatz 1 Buchstabe b DSGVO (Nutzung des von dir angeforderten Dienstes) und Buchstabe f DSGVO (Interesse an einem sicheren, funktionierenden Betrieb). Eine Weitergabe zu Werbezwecken findet nicht statt.",
+            "Artikel 6 Absatz 1 Buchstabe b DSGVO: die Verarbeitung ist nötig, um den von dir angeforderten Dienst zu erbringen.",
+            "Artikel 6 Absatz 1 Buchstabe f DSGVO: berechtigtes Interesse an einem sicheren, stabilen und missbrauchsfreien Betrieb.",
+            "Eine Weitergabe zu Werbezwecken oder ein Verkauf von Daten findet nicht statt.",
           ],
         },
         {
           heading: "Speicherdauer",
           body: [
-            "Deine Eingaben werden nicht dauerhaft gespeichert. Sie bleiben nur für die Dauer der Anfrage im Arbeitsspeicher des Servers. Wenn du die Seite schließt, sind sie weg.",
-            "Technische Protokolle der genannten Anbieter können zeitlich begrenzt anfallen; darauf haben wir nur den Einfluss, den der jeweilige Anbieter einräumt.",
+            "Deine Eingaben werden nicht dauerhaft gespeichert. Sie liegen nur für die Dauer der Anfrage im Arbeitsspeicher des Servers und sind nach dem Schließen der Seite weg.",
+            "Was die Anbieter während der Verarbeitung technisch protokollieren, richtet sich nach deren Vorgaben (bei Groq höchstens 30 Tage zur Missbrauchsprüfung).",
           ],
         },
         {
           heading: "Deine Rechte",
           body: [
             "Du hast das Recht auf Auskunft, Berichtigung, Löschung, Einschränkung der Verarbeitung, Datenübertragbarkeit und Widerspruch.",
-            "Da wir keine Fall-Daten speichern, betrifft eine Löschung in der Regel nur Protokolle. Melde dich dafür per E-Mail an die oben genannte Adresse.",
-            "Du kannst dich außerdem bei einer Aufsichtsbehörde beschweren, für Nordrhein-Westfalen ist das die Landesbeauftragte für Datenschutz und Informationsfreiheit Nordrhein-Westfalen.",
+            "Da wir keine Fall-Daten speichern, betrifft eine Löschung in der Regel nur Protokolle. Eine Nachricht an die oben genannte E-Mail-Adresse genügt.",
+            "Du kannst dich bei einer Aufsichtsbehörde beschweren. Zuständig für Nordrhein-Westfalen ist die Landesbeauftragte für Datenschutz und Informationsfreiheit, Kavalleriestraße 2 bis 4, 40213 Düsseldorf, www.ldi.nrw.de.",
           ],
         },
         {
-          heading: "Wichtiger Hinweis",
+          heading: "Sicherheit",
+          body: [
+            "Die Übertragung zwischen deinem Gerät und dem Server erfolgt verschlüsselt über HTTPS. Die Anfragen werden nicht in einer Weise gespeichert, die Rückschlüsse auf deine Person erlaubt.",
+          ],
+        },
+        {
+          heading: "Wichtig für dich",
           body: [
             "Lade keine Dokumente hoch, die du nicht mit einem KI-Anbieter teilen möchtest. Bei sehr sensiblen Unterlagen ist es besser, nur die entscheidenden Absätze einzutippen.",
+            "Lade auch keine Unterlagen anderer Personen hoch, wenn du dafür keine Erlaubnis hast.",
           ],
         },
       ]}
