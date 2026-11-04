@@ -6,6 +6,7 @@ import DocumentReviewScreen from "./src/screens/DocumentReviewScreen";
 import DraftResponseScreen from "./src/screens/DraftResponseScreen";
 import ChatScreen from "./src/screens/ChatScreen";
 import KnowYourRightsScreen from "./src/screens/KnowYourRightsScreen";
+import { DatenschutzScreen, ImpressumScreen } from "./src/screens/LegalScreens";
 import BottomNav, { TabKey } from "./src/components/BottomNav";
 import { colors } from "./src/theme";
 
@@ -43,7 +44,7 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | 
 
 export default function App() {
   const [tab, setTab] = useState<TabKey>("Home");
-  const [moreScreen, setMoreScreen] = useState<"menu" | "rights">("menu");
+  const [moreScreen, setMoreScreen] = useState<"menu" | "rights" | "impressum" | "datenschutz">("menu");
 
   const goTab = (next: TabKey) => {
     setMoreScreen("menu");
@@ -68,15 +69,31 @@ export default function App() {
           {tab === "Chat" && <ChatScreen />}
           {tab === "Documents" && <DocumentReviewScreen />}
           {tab === "Draft" && <DraftResponseScreen />}
+          {tab === "More" && moreScreen !== "menu" && (
+            <View style={styles.backRow}>
+              <Text style={styles.backLink} onPress={() => setMoreScreen("menu")}>
+                ← Zurück
+              </Text>
+            </View>
+          )}
           {tab === "More" && moreScreen === "rights" && <KnowYourRightsScreen />}
+          {tab === "More" && moreScreen === "impressum" && <ImpressumScreen />}
+          {tab === "More" && moreScreen === "datenschutz" && <DatenschutzScreen />}
           {tab === "More" && moreScreen === "menu" && (
             <View style={styles.morePlaceholder}>
-              <Text style={styles.moreTitle}>More</Text>
-              <Text
-                style={styles.moreLink}
-                onPress={() => setMoreScreen("rights")}
-              >
-                ⚖️  Know your rights
+              <Text style={styles.moreTitle}>Mehr</Text>
+              <Text style={styles.moreLink} onPress={() => setMoreScreen("rights")}>
+                ⚖️  Deine Rechte
+              </Text>
+              <Text style={styles.moreLink} onPress={() => setMoreScreen("impressum")}>
+                📄  Impressum
+              </Text>
+              <Text style={styles.moreLink} onPress={() => setMoreScreen("datenschutz")}>
+                🔒  Datenschutz
+              </Text>
+              <Text style={styles.moreNote}>
+                Diese App erklärt Dokumente und schlägt Antworten vor. Sie ist keine
+                Rechtsberatung und ersetzt keine Anwältin und keinen Anwalt.
               </Text>
             </View>
           )}
@@ -106,6 +123,21 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     marginBottom: 20,
   },
+  backRow: {
+    paddingHorizontal: 20,
+    paddingTop: 14,
+  },
+  backLink: {
+    color: colors.textSecondary,
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  moreNote: {
+    color: colors.textMuted,
+    fontSize: 12,
+    lineHeight: 18,
+    marginTop: 18,
+  },
   moreLink: {
     color: colors.textPrimary,
     fontSize: 15,
@@ -115,5 +147,6 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     borderRadius: 14,
     padding: 16,
+    marginBottom: 10,
   },
 });

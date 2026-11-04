@@ -106,7 +106,7 @@ async function readWebFile(
     for (let i = 0; i < bytes.length; i += chunk) {
       binary += String.fromCharCode(...bytes.subarray(i, i + chunk));
     }
-    if (bytes.length > MAX_IMAGE_BYTES) throw new Error("Image too large (max 4 MB).");
+    if (bytes.length > MAX_IMAGE_BYTES) throw new Error("Bild zu groß (max. 4 MB).");
     return { mode: "image", data: btoa(binary), mime: file.type };
   }
   // plain text-ish files (.txt, .md, .csv, …) — PDFs are not supported yet

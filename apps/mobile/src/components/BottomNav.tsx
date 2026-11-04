@@ -4,11 +4,11 @@ import { colors } from "../theme";
 export type TabKey = "Home" | "Chat" | "Documents" | "Draft" | "More";
 
 const TABS: { key: TabKey; label: string; icon: string }[] = [
-  { key: "Home", label: "Home", icon: "🏠" },
+  { key: "Home", label: "Start", icon: "🏠" },
   { key: "Chat", label: "Chat", icon: "💬" },
-  { key: "Documents", label: "Documents", icon: "📄" },
-  { key: "Draft", label: "Draft", icon: "✍️" },
-  { key: "More", label: "More", icon: "☰" },
+  { key: "Documents", label: "Dokumente", icon: "📄" },
+  { key: "Draft", label: "Antwort", icon: "✍️" },
+  { key: "More", label: "Mehr", icon: "☰" },
 ];
 
 export default function BottomNav({
